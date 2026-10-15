@@ -7,15 +7,26 @@ import 'profile/profile_screen.dart';
 import 'auth/login_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
-  const MainShellScreen({super.key});
+  final int initialIndex;
+
+  const MainShellScreen({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   @override
   State<MainShellScreen> createState() => _MainShellScreenState();
 }
 
 class _MainShellScreenState extends State<MainShellScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   final List<MeterReading> _readings = MeterReading.getInitialMockData();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   void _onTabSelected(int index) {
     setState(() {
