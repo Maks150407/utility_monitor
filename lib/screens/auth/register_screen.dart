@@ -89,8 +89,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceFirst('Exception: ', '').trim();
       setState(() {
-        _serverErrorMessage = e.toString().replaceFirst('Exception: ', '');
+        _serverErrorMessage = msg.isNotEmpty && msg != 'Error'
+            ? msg
+            : 'Помилка реєстрації. Перевірте введені дані.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

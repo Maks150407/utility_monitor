@@ -83,8 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceFirst('Exception: ', '').trim();
       setState(() {
-        _serverErrorMessage = e.toString().replaceFirst('Exception: ', '');
+        _serverErrorMessage = msg.isNotEmpty && msg != 'Error'
+            ? msg
+            : 'Помилка автентифікації. Перевірте введені дані.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -116,7 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _serverErrorMessage = e.toString());
+      final msg = e.toString().replaceFirst('Exception: ', '').trim();
+      setState(() => _serverErrorMessage = msg.isNotEmpty && msg != 'Error'
+          ? msg
+          : 'Помилка входу через Google.');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -280,6 +286,34 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                       onPressed: _isLoading ? null : _handleGoogleSignIn,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Демо-вхід в 1 клік для захисту
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14.0),
+                          side: BorderSide(color: AppColors.primary.withAlpha(90)),
+                        ),
+                      ),
+                      icon: const Icon(Icons.flash_on, size: 20),
+                      label: const Text(
+                        'Швидкий демо-вхід (в 1 клік)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              _emailController.text = 'maks@example.com';
+                              _passwordController.text = 'Password123!';
+                              _handleLogin();
+                            },
                     ),
                   ),
                   const SizedBox(height: 24),
