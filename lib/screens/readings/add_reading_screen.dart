@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_styles.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../models/meter_reading.dart';
 import '../../models/utility_type.dart';
+import '../../services/analytics_service.dart';
 
 class AddReadingScreen extends StatefulWidget {
   final MeterReading? readingToEdit;
@@ -20,6 +22,7 @@ class AddReadingScreen extends StatefulWidget {
 }
 
 class _AddReadingScreenState extends State<AddReadingScreen> {
+  final _formKey = GlobalKey<FormState>();
   late UtilityType _selectedType;
   late final TextEditingController _valueController;
   late final TextEditingController _dateController;
@@ -39,8 +42,14 @@ class _AddReadingScreenState extends State<AddReadingScreen> {
       text: _formatDate(_selectedDate),
     );
     _commentController = TextEditingController(
-      text: edit?.comment ?? 'Напр., заміна лічильника',
+      text: edit?.comment ?? '',
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Uri.base.queryParameters['validate'] == 'true') {
+        _valueController.clear();
+        _formKey.currentState?.validate();
+      }
+    });
   }
 
   String _formatDate(DateTime d) {
@@ -86,6 +95,10 @@ class _AddReadingScreenState extends State<AddReadingScreen> {
   }
 
   void _save() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final val = double.tryParse(_valueController.text.trim().replaceAll(',', '.')) ?? 0.0;
     final reading = MeterReading(
       id: widget.readingToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -96,6 +109,13 @@ class _AddReadingScreenState extends State<AddReadingScreen> {
           ? _commentController.text.trim()
           : null,
     );
+
+    // Логування в аналітику
+    AnalyticsService.instance.logReadingAdded(
+      utilityType: _selectedType.name,
+      value: val,
+    );
+
     Navigator.of(context).pop(reading);
   }
 
@@ -122,107 +142,111 @@ class _AddReadingScreenState extends State<AddReadingScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 500),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Type dropdown
-                const Text(
-                  'Тип послуги',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Type dropdown
+                  const Text(
+                    'Тип послуги',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: AppStyles.radiusLg,
-                    border: Border.all(color: AppColors.border, width: 1.2),
-                    boxShadow: AppStyles.softShadow,
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<UtilityType>(
-                      value: _selectedType,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
-                      items: UtilityType.values.map((type) {
-                        return DropdownMenuItem<UtilityType>(
-                          value: type,
-                          child: Row(
-                            children: [
-                              Icon(type.icon, color: type.color, size: 22),
-                              const SizedBox(width: 12),
-                              Text(
-                                type.displayName,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppStyles.radiusLg,
+                      border: Border.all(color: AppColors.border, width: 1.2),
+                      boxShadow: AppStyles.softShadow,
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<UtilityType>(
+                        value: _selectedType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+                        items: UtilityType.values.map((type) {
+                          return DropdownMenuItem<UtilityType>(
+                            value: type,
+                            child: Row(
+                              children: [
+                                Icon(type.icon, color: type.color, size: 22),
+                                const SizedBox(width: 12),
+                                Text(
+                                  type.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedType = val);
-                        }
-                      },
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedType = val);
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // Meter reading value
-                CustomTextField(
-                  label: 'Показник лічильника (${_selectedType.unit})',
-                  controller: _valueController,
-                  prefixIcon: Icons.speed,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 20),
+                  // Meter reading value with Form validation
+                  CustomTextField(
+                    label: 'Показник лічильника (${_selectedType.unit})',
+                    controller: _valueController,
+                    prefixIcon: Icons.speed,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: Validators.meterReading,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Reading date
-                CustomTextField(
-                  label: 'Дата показника',
-                  controller: _dateController,
-                  prefixIcon: Icons.calendar_today_outlined,
-                  readOnly: true,
-                  onTap: _pickDate,
-                ),
-                const SizedBox(height: 20),
+                  // Reading date
+                  CustomTextField(
+                    label: 'Дата показника',
+                    controller: _dateController,
+                    prefixIcon: Icons.calendar_today_outlined,
+                    readOnly: true,
+                    onTap: _pickDate,
+                  ),
+                  const SizedBox(height: 20),
 
-                // Comment
-                CustomTextField(
-                  label: 'Коментар (необов\'язково)',
-                  controller: _commentController,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 36),
+                  // Comment
+                  CustomTextField(
+                    label: 'Коментар (необов\'язково)',
+                    controller: _commentController,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 36),
 
-                // Action buttons: Cancel and Save
-                Row(
-                  children: [
-                    Expanded(
-                      child: SecondaryButton(
-                        text: 'Скасувати',
-                        onPressed: () => Navigator.of(context).pop(),
+                  // Action buttons: Cancel and Save
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SecondaryButton(
+                          text: 'Скасувати',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: PrimaryButton(
-                        text: 'Зберегти',
-                        onPressed: _save,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: PrimaryButton(
+                          text: 'Зберегти',
+                          onPressed: _save,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
