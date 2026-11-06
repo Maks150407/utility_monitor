@@ -189,11 +189,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEE2E2),
                         borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(color: AppColors.error.withAlpha(120)),
+                        border:
+                            Border.all(color: AppColors.error.withAlpha(120)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                          const Icon(Icons.error_outline,
+                              color: AppColors.error, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -274,16 +276,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.border, width: 1.2),
+                        side: const BorderSide(
+                            color: AppColors.border, width: 1.2),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16.0),
                         ),
                         backgroundColor: Colors.white,
                       ),
-                      icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
+                      icon: const Icon(Icons.g_mobiledata,
+                          size: 28, color: Colors.red),
                       label: const Text(
                         'Увійти через Google',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                       onPressed: _isLoading ? null : _handleGoogleSignIn,
                     ),
@@ -299,13 +304,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         foregroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14.0),
-                          side: BorderSide(color: AppColors.primary.withAlpha(90)),
+                          side: BorderSide(
+                              color: AppColors.primary.withAlpha(90)),
                         ),
                       ),
                       icon: const Icon(Icons.flash_on, size: 20),
                       label: const Text(
-                        'Швидкий демо-вхід (в 1 клік)',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        'Швидкий демо-вхід',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                       onPressed: _isLoading
                           ? null
